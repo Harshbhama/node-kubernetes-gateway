@@ -12,6 +12,7 @@ import http from 'http';
 import { config } from "@gateway/config";
 import { elasticSearch } from "@gateway/elasticsearch";
 import { appRoutes } from "@gateway/routes";
+import { axiosAuthInstance } from "@gateway/services/api/auth.service";
 const SERVER_PORT = 4000;
 const log: Logger = winstonLogger(`${config.ELASTIC_SEARCH_URL}`, 'apiGatewayServer', 'debug');
 
@@ -47,7 +48,13 @@ export class GatewayServer {
       origin: config.CLIENT_URL,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-    }))
+    }));
+    app.use((req: Request, _res: Response, next: NextFunction) => {
+      if(req.session?.jwt){
+        axiosAuthInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
+      }
+      next();
+    })
   }
   private standardMiddleware(app: Application): void {
     app.use(compression());
